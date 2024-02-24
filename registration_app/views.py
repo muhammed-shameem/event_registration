@@ -85,6 +85,23 @@ class EventListAPIView(APIView):
         return formatted_response(status=status.HTTP_200_OK, success=True, message="Event listing successful", data=serializer.data)
 
 
+class EventDetailAPIView(APIView):
+    """
+    API endpoint for retrieving details of a specific event.
+    """
+
+    def get_object(self, pk):
+        try:
+            return Event.objects.get(pk=pk)
+        except Event.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, *args, **kwargs):
+        event = self.get_object(pk)
+        serializer = EventSerializer(event)
+        return formatted_response(status=status.HTTP_200_OK, success=True, message="Event retrieval successful", data=serializer.data)
+
+
 class EventRegistrationAPIView(APIView):
     """
     API endpoint for handling event registrations.
