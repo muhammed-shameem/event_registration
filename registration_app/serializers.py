@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.utils import timezone
+from django.contrib.auth.password_validation import validate_password, ValidationError
 from .models import Event, Registration
 from rest_framework.validators import UniqueValidator
-from django.contrib.auth.password_validation import validate_password, ValidationError
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -103,7 +104,11 @@ class EventRegistrationSerializer(serializers.ModelSerializer):
         if not event:
             raise serializers.ValidationError({"event": "Event doesn't exist"})
 
-        if event.capacity <= 0:
+        if event.valid_until and event.valid_until < timezone.now().date():
+            raise serializers.ValidationError(
+                {"event": "Event registration has expired"})
+
+        if event.capacity <= event.total_registration:
             raise serializers.ValidationError(
                 {"event": "Event is at full capacity"})
 
@@ -118,7 +123,7 @@ class EventRegistrationSerializer(serializers.ModelSerializer):
         event_id = validated_data.pop('event')
         user_id = validated_data['user']
         event = Event.objects.get(id=event_id)
-        event.capacity -= 1
+        event.total_registration += 1
         event.save()
         event_registration = Registration.objects.create(
             user=user_id,
