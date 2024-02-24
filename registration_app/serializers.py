@@ -62,7 +62,8 @@ class LoginSerializer(serializers.Serializer):
         if user and user.check_password(password):
             return data
         else:
-            raise serializers.ValidationError("Invalid credentials")
+            raise serializers.ValidationError(
+                {"credential": "Invalid credentials"})
 
 
 class ProfileSerializer(serializers.ModelSerializer):
