@@ -1,12 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.authentication import TokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from .models import Event
-from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, EventSerializer
+from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, EventSerializer, EventRegistrationSerializer
 from .utils import formatted_response
 
 
@@ -91,12 +91,13 @@ class EventRegistrationAPIView(APIView):
         - event (number): id.
     """
 
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        serializer = RegistrationSerializer(data=request.data)
+        request.data['user'] = request.user.id
+        serializer = EventRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save()
             return formatted_response(status=status.HTTP_201_CREATED, success=True, message="Event registration successful", data=serializer.data)
         return formatted_response(status=status.HTTP_400_BAD_REQUEST, success=False, message="Event registration unsuccessful", data=serializer.errors)

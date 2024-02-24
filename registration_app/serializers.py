@@ -83,24 +83,45 @@ class EventSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class RegistrationSerializer(serializers.ModelSerializer):
+class EventRegistrationSerializer(serializers.ModelSerializer):
     """
     Serializer for Event Registration.
     """
-    event = EventSerializer()
+    event = serializers.IntegerField(write_only=True, required=True)
 
     class Meta:
         model = Registration
         fields = '__all__'
 
-    def validate(self, data):
-        event_data = data.get('event')
-        event_id = event_data.get('id') if event_data else None
-        if event_id:
-            try:
-                event = Event.objects.get(id=event_id)
-            except Event.DoesNotExist:
-                raise serializers.ValidationError("Event not found")
-            if Registration.objects.filter(event=event).count() >= event.capacity:
-                raise serializers.ValidationError("Event is at full capacity")
-        return data
+    def validate(self, attrs):
+        event_id = attrs.get('event')
+        if event_id is None:
+            raise serializers.ValidationError({"event": "Event id required"})
+
+        event = Event.objects.filter(id=event_id).first()
+        if not event:
+            raise serializers.ValidationError({"event": "Event doesn't exist"})
+
+        if event.capacity <= 0:
+            raise serializers.ValidationError(
+                {"event": "Event is at full capacity"})
+
+        user_id = attrs.get('user')
+        if Registration.objects.filter(user=user_id, event=event).exists():
+            raise serializers.ValidationError(
+                {"user": "User is already registered for this event"})
+
+        return attrs
+
+    def create(self, validated_data):
+        event_id = validated_data.pop('event')
+        user_id = validated_data['user']
+        event = Event.objects.get(id=event_id)
+        event.capacity -= 1
+        event.save()
+        event_registration = Registration.objects.create(
+            user=user_id,
+            event=event,
+        )
+
+        return event_registration
