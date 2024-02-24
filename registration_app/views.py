@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from .models import Event
 from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, EventSerializer, EventRegistrationSerializer
 from .utils import formatted_response
+from .permissions import IsAdminOrReadOnly
 
 
 class UserRegistrationAPIView(APIView):
@@ -101,3 +102,23 @@ class EventRegistrationAPIView(APIView):
             serializer.save()
             return formatted_response(status=status.HTTP_201_CREATED, success=True, message="Event registration successful", data=serializer.data)
         return formatted_response(status=status.HTTP_400_BAD_REQUEST, success=False, message="Event registration unsuccessful", data=serializer.errors)
+
+
+class EventCreateAPIView(APIView):
+    """
+    API endpoint for creating events (admin-only).
+
+    Req Body:
+        - name (str): The desired name for the event.
+        - description (str:optional): Description about event.
+        - capacity (number): Total registration capacity.
+    """
+    permission_classes = [IsAdminOrReadOnly]
+
+    def post(self, request, *args, **kwargs):
+        print("Request data:", request.data)
+        serializer = EventSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return formatted_response(status=status.HTTP_201_CREATED, success=True, message="Event creation successful", data=serializer.data)
+        return formatted_response(status=status.HTTP_400_BAD_REQUEST, success=False, message="Event creation unsuccessful", data=serializer.errors)
