@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserRegistrationAPIView, LoginAPIView, EventListAPIView, EventRegistrationAPIView, EventCreateAPIView, CancelEventRegistrationView
+from .views import UserRegistrationAPIView, LoginAPIView, EventListAPIView, EventRegistrationAPIView, EventCreateAPIView, CancelEventRegistrationView, EventRegistrationListAPIView
 from rest_framework_simplejwt.views import (TokenRefreshView)
 
 urlpatterns = [
@@ -14,4 +14,6 @@ urlpatterns = [
          name='create_event'),
     path('cancel-event-registration/<int:pk>/',
          CancelEventRegistrationView.as_view(), name='cancel_event_registration'),
+    path('all-event-registrations/', EventRegistrationListAPIView.as_view(),
+         name='all_event_registrations'),
 ]

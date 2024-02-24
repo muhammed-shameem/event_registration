@@ -157,3 +157,18 @@ class CancelEventRegistrationView(APIView):
             return Registration.objects.get(pk=pk)
         except Registration.DoesNotExist:
             raise Http404
+
+
+class EventRegistrationListAPIView(APIView):
+    """
+    API endpoint for listing event registration.
+    """
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        event_registrations = Registration.objects.filter(user=request.user)
+        serializer = BasicEventRegistrationSerializer(
+            event_registrations, many=True)
+        return formatted_response(status=status.HTTP_200_OK, success=True, message="Event Registration listing successful", data=serializer.data)
