@@ -38,8 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # 3rd party
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_yasg',
+    # created apps
     'registration_app'
 ]
 
