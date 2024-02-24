@@ -1,10 +1,14 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password, ValidationError
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """
+    Serializer for user registration.
+    """
     email = serializers.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
@@ -40,3 +44,31 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+    """
+    Serializer for user login.
+    """
+    username = serializers.CharField(max_length=150)
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        username = data.get('username')
+        password = data.get('password')
+
+        user = User.objects.filter(username=username).first()
+
+        if user and user.check_password(password):
+            return data
+        else:
+            raise serializers.ValidationError("Invalid credentials")
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for user profile.
+    """
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name']
