@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from django.contrib.auth.models import User
+from .models import Event, Registration
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password, ValidationError
 
@@ -72,3 +72,35 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name']
+
+
+class EventSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Event.
+    """
+    class Meta:
+        model = Event
+        fields = '__all__'
+
+
+class RegistrationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Event Registration.
+    """
+    event = EventSerializer()
+
+    class Meta:
+        model = Registration
+        fields = '__all__'
+
+    def validate(self, data):
+        event_data = data.get('event')
+        event_id = event_data.get('id') if event_data else None
+        if event_id:
+            try:
+                event = Event.objects.get(id=event_id)
+            except Event.DoesNotExist:
+                raise serializers.ValidationError("Event not found")
+            if Registration.objects.filter(event=event).count() >= event.capacity:
+                raise serializers.ValidationError("Event is at full capacity")
+        return data
