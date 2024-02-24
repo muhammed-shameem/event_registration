@@ -85,6 +85,15 @@ class EventSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class BasicEventRegistrationSerializer(serializers.ModelSerializer):
+    """
+    Basic Serializer for Event Registration.
+    """
+    class Meta:
+        model = Registration
+        fields = '__all__'
+
+
 class EventRegistrationSerializer(serializers.ModelSerializer):
     """
     Serializer for Event Registration.

@@ -5,8 +5,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
-from .models import Event
-from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, EventSerializer, EventRegistrationSerializer
+from django.http import Http404
+from .models import Registration, Event
+from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, EventSerializer, EventRegistrationSerializer, BasicEventRegistrationSerializer
 from .utils import formatted_response
 from .permissions import IsAdminOrReadOnly
 
@@ -113,6 +114,7 @@ class EventCreateAPIView(APIView):
         - description (str:optional): Description about event.
         - capacity (number): Total registration capacity.
     """
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
     def post(self, request, *args, **kwargs):
@@ -122,3 +124,36 @@ class EventCreateAPIView(APIView):
             serializer.save()
             return formatted_response(status=status.HTTP_201_CREATED, success=True, message="Event creation successful", data=serializer.data)
         return formatted_response(status=status.HTTP_400_BAD_REQUEST, success=False, message="Event creation unsuccessful", data=serializer.errors)
+
+
+class CancelEventRegistrationView(APIView):
+    """
+    API endpoint to cancel an event registration. Only the owner can change the status.
+    """
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk, format=None):
+        event_registration = self.get_object(pk)
+        if event_registration.user != request.user:
+            return formatted_response(status=status.HTTP_403_FORBIDDEN, success=False, message="You do not have permission to perform this action.", data=None)
+        if event_registration.cancelled:
+            return formatted_response(status=status.HTTP_200_OK, success=True, message="Event registration is already cancelled", data=None)
+
+        event = event_registration.event
+        event.total_registration = max(0, event.total_registration - 1)
+        event.save()
+
+        serializer = BasicEventRegistrationSerializer(
+            event_registration, data={'cancelled': True}, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return formatted_response(status=status.HTTP_200_OK, success=True, message="Cancel event registration successful", data=serializer.data)
+        return formatted_response(status=status.HTTP_400_BAD_REQUEST, success=False, message="Cancel event registration unsuccessful", data=serializer.errors)
+
+    def get_object(self, pk):
+        try:
+            return Registration.objects.get(pk=pk)
+        except Registration.DoesNotExist:
+            raise Http404
