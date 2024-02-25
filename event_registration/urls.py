@@ -10,7 +10,7 @@ schema_view = get_schema_view(
         default_version='v1',
         description="Event Registration APIs",
         terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="muhammadshami977@gmail.coms"),
+        contact=openapi.Contact(email="muhammadshami977@gmail.com"),
         license=openapi.License(name="BSD License"),
     ),
     public=True,
