@@ -10,6 +10,27 @@ from .serializers import EventSerializer, EventRegistrationSerializer, BasicEven
 
 
 class EventListAPITestCase(TestCase):
+    """
+    Test case for the EventListAPIView.
+
+    This test case verifies the behavior of the EventListAPIView, which is responsible for listing events.
+
+    Setup:
+        - Creates an instance of the APIClient.
+        - Creates two test events for use in the tests.
+
+    Test Methods:
+        1. `test_list_events`: Tests the successful listing of events.
+            - Sends a GET request to '/api/events/'.
+            - Asserts that the response has a 200 status code, 'success' is True, and 'message' is "Event listing successful".
+            - Asserts that the number of events in the response matches the expected number (2).
+            - Compares the serialized data in the response with the serialized data of the test events.
+
+        2. `test_invalid_url`: Tests accessing an invalid URL.
+            - Sends a GET request to an invalid URL ('/invalid-url/').
+            - Asserts that the response has a 404 status code, indicating the URL is not found.
+    """
+
     def setUp(self):
         self.client = APIClient()
         self.event1 = Event.objects.create(
@@ -33,6 +54,27 @@ class EventListAPITestCase(TestCase):
 
 
 class EventDetailAPITestCase(TestCase):
+    """
+    Test case for the EventDetailAPIView.
+
+    This test case verifies the behavior of the EventDetailAPIView, which is responsible for retrieving details of a specific event.
+
+    Setup:
+        - Creates an instance of the APIClient.
+        - Creates a test event for use in the tests.
+
+    Test Methods:
+        1. `test_retrieve_event_details`: Tests the successful retrieval of event details.
+            - Constructs a URL for a specific event using its primary key.
+            - Sends a GET request to the constructed URL.
+            - Asserts that the response has a 200 status code, 'success' is True, and 'message' is "Event retrieval successful".
+            - Compares the serialized data in the response with the serialized data of the test event.
+
+        2. `test_retrieve_nonexistent_event`: Tests attempting to retrieve details of a nonexistent event.
+            - Constructs a URL for a nonexistent event using an invalid primary key.
+            - Sends a GET request to the constructed URL.
+            - Asserts that the response has a 404 status code, indicating the event is not found.
+    """
 
     def setUp(self):
         self.client = APIClient()
@@ -58,6 +100,30 @@ class EventDetailAPITestCase(TestCase):
 
 
 class CreateEventAPITestCase(TestCase):
+    """
+    Test case for the CreateEventAPIView.
+
+    This test case verifies the behavior of the CreateEventAPIView, which is responsible for creating events.
+
+    Setup:
+        - Creates an instance of the APIClient.
+        - Creates an admin user for use in tests.
+
+    Helper Method:
+        - `get_jwt_token`: Generates a JWT token for a given user.
+
+    Test Methods:
+        1. `test_successful_event_creation`: Tests the successful creation of an event by an admin user.
+            - Generates a JWT token for the admin user.
+            - Sends a POST request to '/api/create-event/' with valid event data and the JWT token.
+            - Asserts that the response has a 201 status code, 'success' is True, and 'message' is "Event creation successful".
+
+        2. `test_forbidden_event_creation`: Tests that a non-admin user cannot create an event.
+            - Creates a non-admin user and generates a JWT token for that user.
+            - Sends a POST request to '/api/create-event/' with valid event data and the non-admin user's JWT token.
+            - Asserts that the response has a 403 status code, indicating forbidden access.
+    """
+
     def setUp(self):
         self.client = APIClient()
         self.admin = User.objects.create_superuser(
@@ -96,6 +162,40 @@ class CreateEventAPITestCase(TestCase):
 
 
 class EventRegistrationAPIViewTestCase(TestCase):
+    """
+    Test case for the EventRegistrationAPIView.
+
+    This test case verifies the behavior of the EventRegistrationAPIView, which is responsible for handling event registrations.
+
+    Setup:
+        - Creates an instance of APIRequestFactory for creating mock requests.
+        - Creates a test user and a test event for use in tests.
+
+    Helper Method:
+        - `get_jwt_token`: Generates a JWT token for the test user.
+
+    Test Methods:
+        1. `test_successful_registration`: Tests the successful registration of a user for an event.
+            - Generates a JWT token for the test user.
+            - Sends a POST request to '/api/event-register/' with valid event data and the JWT token.
+            - Asserts that the response has a 201 status code, 'success' is True, 'message' is "Event registration successful", and the registration count is 1.
+
+        2. `test_missing_event_id`: Tests attempting to register for an event without providing the event ID.
+            - Generates a JWT token for the test user.
+            - Sends a POST request to '/api/event-register/' without providing the event ID.
+            - Asserts that the response has a 400 status code, 'success' is False, 'message' is "Event registration unsuccessful", and the error message indicates that the event ID is required.
+
+        3. `test_invalid_event_id`: Tests attempting to register for an event with an invalid event ID.
+            - Generates a JWT token for the test user.
+            - Sends a POST request to '/api/event-register/' with an invalid event ID.
+            - Asserts that the response has a 400 status code, 'success' is False, 'message' is "Event registration unsuccessful", and the error message indicates that the event doesn't exist.
+
+        4. `test_event_full_capacity`: Tests attempting to register for an event that has reached full capacity.
+            - Generates a JWT token for the test user.
+            - Registers one user to reach the full capacity.
+            - Attempts to register a second user.
+            - Asserts that the response has a 400 status code, 'success' is False, 'message' is "Event registration unsuccessful", and the error message indicates that the event is at full capacity.
+    """
 
     def setUp(self):
         self.factory = APIRequestFactory()
@@ -184,6 +284,30 @@ class EventRegistrationAPIViewTestCase(TestCase):
 
 
 class CancelRegistrationAPITestCase(TestCase):
+    """
+    Test case for the CancelEventRegistrationView.
+
+    This test case verifies the behavior of the CancelEventRegistrationView, which is responsible for canceling event registrations.
+
+    Setup:
+        - Creates an instance of the APIClient.
+        - Creates a test event, a test user, and a test registration for use in tests.
+
+    Helper Method:
+        - `get_jwt_token`: Generates a JWT token for a given user.
+
+    Test Methods:
+        1. `test_successful_cancellation`: Tests the successful cancellation of an event registration by the owner.
+            - Generates a JWT token for the test user.
+            - Sends a PATCH request to the cancellation URL with the JWT token.
+            - Asserts that the response has a 200 status code, 'success' is True, 'message' is "Cancel event registration successful", and the registration is marked as canceled.
+
+        2. `test_unauthorized_access_by_different_user`: Tests that a different user cannot cancel the event registration.
+            - Creates another user and generates a JWT token for that user.
+            - Sends a PATCH request to the cancellation URL with the JWT token.
+            - Asserts that the response has a 403 status code, indicating unauthorized access.
+    """
+
     def setUp(self):
         self.client = APIClient()
         self.event = Event.objects.create(
@@ -220,6 +344,28 @@ class CancelRegistrationAPITestCase(TestCase):
 
 
 class EventRegistrationListAPITestCase(TestCase):
+    """
+    Test case for the EventRegistrationListAPIView.
+
+    This test case verifies the behavior of the EventRegistrationListAPIView, which is responsible for listing event registrations.
+
+    Setup:
+        - Creates an instance of the APIClient.
+        - Creates two test events, a test user, and two test registrations for use in tests.
+
+    Helper Method:
+        - `get_jwt_token`: Generates a JWT token for the test user.
+
+    Test Methods:
+        1. `test_list_registered_events`: Tests the successful listing of events registered by a user.
+            - Generates a JWT token for the test user.
+            - Sends a GET request to '/api/all-event-registrations/' with the JWT token.
+            - Asserts that the response has a 200 status code, 'success' is True, 'message' is "Event Registration listing successful", and the data contains the serialized event registrations.
+
+        2. `test_invalid_url`: Tests accessing an invalid URL.
+            - Sends a GET request to an invalid URL.
+            - Asserts that the response has a 404 status code.
+    """
     def setUp(self):
         self.client = APIClient()
         self.event1 = Event.objects.create(
