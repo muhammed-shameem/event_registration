@@ -28,5 +28,5 @@ urlpatterns = [
 
     # APP URLS
     path('admin/', admin.site.urls),
-    path('', include('registration_app.urls')),
+    path('api/', include('registration_app.urls')),
 ]
