@@ -57,6 +57,44 @@ class EventDetailAPITestCase(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class CreateEventAPITestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_superuser(
+            username='admin', password='testpassword', email="admin@example.com")
+
+    def get_jwt_token(self, user):
+        refresh = RefreshToken.for_user(user)
+        return f'Bearer {refresh.access_token}'
+
+    def test_successful_event_creation(self):
+        jwt_token = self.get_jwt_token(self.admin)
+        data = {
+            'name': 'Test Event',
+            'capacity': 10,
+            'valid_until': "2024-03-15"
+        }
+        response = self.client.post(
+            '/api/create-event/', data, HTTP_AUTHORIZATION=jwt_token)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json()['success'])
+        self.assertEqual(
+            response.json()['message'], "Event creation successful")
+
+    def test_forbidden_event_creation(self):
+        non_admin = User.objects.create_user(
+            username="user", password="userpassword")
+        non_admin_jwt_token = self.get_jwt_token(non_admin)
+        data = {
+            'name': 'Test Event2',
+            'capacity': 10,
+            'valid_until': "2024-03-15"
+        }
+        response = self.client.post(
+            '/api/create-event/', data, HTTP_AUTHORIZATION=non_admin_jwt_token)
+        self.assertEqual(response.status_code, 403)
+
+
 class EventRegistrationAPIViewTestCase(TestCase):
 
     def setUp(self):
