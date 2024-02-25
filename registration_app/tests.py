@@ -1,8 +1,12 @@
-from django.test import TestCase
-from rest_framework.test import APIClient
-from .models import Event
-from .views import EventListAPIView
-from .serializers import EventSerializer
+from django.test import TestCase, Client
+from django.http import QueryDict
+from django.contrib.auth.models import User
+from rest_framework.test import APIClient, APIRequestFactory
+from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta, datetime
+from .models import Event, Registration
+from .views import EventListAPIView, EventRegistrationAPIView
+from .serializers import EventSerializer, EventRegistrationSerializer
 
 
 class EventListAPITestCase(TestCase):
@@ -51,3 +55,91 @@ class EventDetailAPITestCase(TestCase):
         url = "/api/events/999/"
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+
+
+class EventRegistrationAPIViewTestCase(TestCase):
+
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        self.user = User.objects.create_user(
+            username='testuser', password='testpassword')
+        self.event = Event.objects.create(
+            name='Test Event', capacity=1, valid_until=datetime.now() + timedelta(days=1))
+
+    def get_jwt_token(self):
+        refresh = RefreshToken.for_user(self.user)
+        return f'Bearer {refresh.access_token}'
+
+    def test_successful_registration(self):
+        jwt_token = self.get_jwt_token()
+        data = {'event': self.event.id}
+        request = self.factory.post(
+            '/api/event-register/', data, HTTP_AUTHORIZATION=jwt_token)
+        request.POST = QueryDict(request.POST.urlencode(), mutable=True)
+        view = EventRegistrationAPIView.as_view()
+        response = view(request)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['success'], True)
+        self.assertEqual(response.data['message'],
+                         'Event registration successful')
+        self.assertEqual(Registration.objects.count(), 1)
+
+    def test_missing_event_id(self):
+        jwt_token = self.get_jwt_token()
+        data = {}
+        request = self.factory.post(
+            '/api/event-register/', data, HTTP_AUTHORIZATION=jwt_token)
+        request.POST = QueryDict(request.POST.urlencode(), mutable=True)
+        view = EventRegistrationAPIView.as_view()
+        response = view(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['success'], False)
+        self.assertEqual(response.data['message'],
+                         'Event registration unsuccessful')
+        self.assertEqual(
+            str(response.data['data']['event'][0]), 'This field is required.')
+
+    def test_invalid_event_id(self):
+        jwt_token = self.get_jwt_token()
+        data = {'event': 999}
+        request = self.factory.post(
+            '/api/event-register/', data, HTTP_AUTHORIZATION=jwt_token)
+        request.POST = QueryDict(request.POST.urlencode(), mutable=True)
+
+        view = EventRegistrationAPIView.as_view()
+        response = view(request)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['success'], False)
+        self.assertEqual(response.data['message'],
+                         'Event registration unsuccessful')
+        self.assertEqual(
+            str(response.data['data']['event'][0]), 'Event doesn\'t exist')
+
+    def test_event_full_capacity(self):
+        jwt_token = self.get_jwt_token()
+        data = {'event': self.event.id}
+
+        # Registering one users to reach full capacity
+        request_first = self.factory.post(
+            '/api/event-register/', data, HTTP_AUTHORIZATION=jwt_token)
+        request_first.POST = QueryDict(
+            request_first.POST.urlencode(), mutable=True)
+        view = EventRegistrationAPIView.as_view()
+        response_first = view(request_first)
+        self.assertEqual(response_first.status_code, 201)
+        self.assertEqual(response_first.data['success'], True)
+
+        # Attempting to register a second user
+        request = self.factory.post(
+            '/api/event-register/', data, HTTP_AUTHORIZATION=jwt_token)
+        request.POST = QueryDict(request.POST.urlencode(), mutable=True)
+        view = EventRegistrationAPIView.as_view()
+        response = view(request)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['success'], False)
+        self.assertEqual(response.data['message'],
+                         'Event registration unsuccessful')
+        self.assertEqual(response.data['data']
+                         ['event'][0], 'Event is at full capacity')
