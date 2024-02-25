@@ -145,6 +145,42 @@ class EventRegistrationAPIViewTestCase(TestCase):
                          ['event'][0], 'Event is at full capacity')
 
 
+class CancelRegistrationAPITestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.event = Event.objects.create(
+            name="Test Event", capacity=10, valid_until=datetime.now())
+        self.user = User.objects.create_user(
+            username='testuser', password='testpassword')
+        self.registration = Registration.objects.create(
+            user=self.user, event=self.event)
+        self.url = f'/api/cancel-event-registration/{self.registration.pk}/'
+
+    def get_jwt_token(self, user):
+        refresh = RefreshToken.for_user(user)
+        return f'Bearer {refresh.access_token}'
+
+    def test_successful_cancellation(self):
+        jwt_token = self.get_jwt_token(self.user)
+        response = self.client.patch(self.url, HTTP_AUTHORIZATION=jwt_token)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assertEqual(
+            response.json()['message'], "Cancel event registration successful")
+        self.assertTrue(response.json()['data']['cancelled'])
+
+    def test_unauthorized_access_by_different_user(self):
+        unauthorized_user = User.objects.create_user(
+            username="unauthorized_user", password="unauthorized_password")
+        unknown_jwt_token = self.get_jwt_token(unauthorized_user)
+        response = self.client.patch(
+            self.url, HTTP_AUTHORIZATION=unknown_jwt_token)
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(response.json()['success'])
+        self.assertEqual(
+            response.json()['message'], "You do not have permission to perform this action.")
+
+
 class EventRegistrationListAPITestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
