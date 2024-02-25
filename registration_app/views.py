@@ -1,11 +1,13 @@
+from django.contrib.auth.models import User
+from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.models import User
-from django.http import Http404
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from .models import Registration, Event
 from .serializers import (
     RegisterSerializer,
@@ -50,7 +52,7 @@ class UserRegistrationAPIView(APIView):
             - 'message': "User registration unsuccessful"
             - 'data': Detailed error information, if applicable.
     """
-
+    @swagger_auto_schema(request_body=RegisterSerializer)
     def post(self, request, *args, **kwargs):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -96,7 +98,7 @@ class LoginAPIView(APIView):
             - 'message': "User login unsuccessful"
             - 'data': Detailed error information, if applicable.
     """
-
+    @swagger_auto_schema(request_body=LoginSerializer)
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -195,6 +197,15 @@ class EventRegistrationAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'event': openapi.Schema(type=openapi.TYPE_INTEGER, description='event id'),
+        },
+        required=['event']
+    ),
+        responses={201: EventRegistrationSerializer}
+    )
     def post(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         serializer = EventRegistrationSerializer(data=request.data)
@@ -234,8 +245,8 @@ class EventCreateAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminOrReadOnly]
 
+    @swagger_auto_schema(request_body=EventSerializer)
     def post(self, request, *args, **kwargs):
-        print("Request data:", request.data)
         serializer = EventSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
