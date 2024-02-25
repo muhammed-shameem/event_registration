@@ -7,7 +7,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.http import Http404
 from .models import Registration, Event
-from .serializers import RegisterSerializer, LoginSerializer, ProfileSerializer, EventSerializer, EventRegistrationSerializer, BasicEventRegistrationSerializer
+from .serializers import (
+    RegisterSerializer,
+    LoginSerializer,
+    ProfileSerializer,
+    EventSerializer,
+    EventRegistrationSerializer,
+    BasicEventRegistrationSerializer
+)
 from .utils import formatted_response
 from .permissions import IsAdminOrReadOnly
 

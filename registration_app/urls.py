@@ -1,5 +1,14 @@
 from django.urls import path
-from .views import UserRegistrationAPIView, LoginAPIView, EventListAPIView, EventRegistrationAPIView, EventCreateAPIView, CancelEventRegistrationView, EventRegistrationListAPIView, EventDetailAPIView
+from .views import (
+    UserRegistrationAPIView,
+    LoginAPIView,
+    EventListAPIView,
+    EventRegistrationAPIView,
+    EventCreateAPIView,
+    CancelEventRegistrationView,
+    EventRegistrationListAPIView,
+    EventDetailAPIView
+)
 from rest_framework_simplejwt.views import (TokenRefreshView)
 
 urlpatterns = [
