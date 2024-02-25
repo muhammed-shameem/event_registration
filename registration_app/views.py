@@ -19,13 +19,34 @@ class UserRegistrationAPIView(APIView):
     This endpoint allows users to register by providing necessary information.
     Upon successful registration, it returns an access token and a refresh token.
 
-    Req Body:
-        - username (str): The desired username for the user.
-        - email (str): The email address of the user.
-        - password (str): The password for the user account.
-        - password2 (str): Confirmation of the password.
-        - first_name (str): The first name of the user.
-        - last_name (str): The last name of the user.
+    Request:
+        - POST request with the following parameters in the request body:
+            - username (str): The desired username for the user.
+            - email (str): The email address of the user.
+            - password (str): The password for the user account.
+            - password2 (str): Confirmation of the password.
+            - first_name (str): The first name of the user.
+            - last_name (str): The last name of the user.
+
+    Response:
+        - If the registration is successful, it returns a 201 Created status along with:
+            - 'success': True
+            - 'message': "User registered successfully"
+            - 'data':
+                - 'token':
+                    - 'refresh': Refresh token as a string
+                    - 'access': Access token as a string
+                - 'profile': Serialized user profile data
+
+        - If the registration fails due to validation errors or other issues, it returns a 400 Bad Request status along with:
+            - 'success': False
+            - 'message': "User registration unsuccessful"
+            - 'data': Detailed error information, if applicable.
+
+    Note:
+        The registration process involves validating the input data using the RegisterSerializer.
+        The user is created if the provided data is valid, and access and refresh tokens are generated.
+        The response is formatted using the 'formatted_response' function for consistency.
     """
 
     def post(self, request, *args, **kwargs):
@@ -50,11 +71,33 @@ class LoginAPIView(APIView):
     """
     API endpoint for user login.
 
-    This endpoint allows users to log in and obtain access and refresh tokens.
+    This endpoint allows users to log in by providing their username and password.
+    Upon successful login, it returns an access token and a refresh token, along with user profile data.
 
-    Req Body:
-        - username (str): username.
-        - password (str): password.
+    Request:
+        - POST request with the following parameters in the request body:
+            - username (str): The username of the user.
+            - password (str): The password for the user account.
+
+    Response:
+        - If the login is successful, it returns a 200 OK status along with:
+            - 'success': True
+            - 'message': "User login successful"
+            - 'data':
+                - 'token':
+                    - 'refresh': Refresh token as a string
+                    - 'access': Access token as a string
+                - 'profile': Serialized user profile data
+
+        - If the login fails due to invalid credentials or other issues, it returns a 400 Bad Request status along with:
+            - 'success': False
+            - 'message': "User login unsuccessful"
+            - 'data': Detailed error information, if applicable.
+
+    Note:
+        The login process involves validating the input data using the LoginSerializer.
+        If the provided credentials are valid, it retrieves the user, generates access and refresh tokens,
+        and returns a formatted response using the 'formatted_response' function for consistency.
     """
 
     def post(self, request, *args, **kwargs):
@@ -79,6 +122,18 @@ class LoginAPIView(APIView):
 class EventListAPIView(APIView):
     """
     API endpoint for listing events.
+
+    This endpoint retrieves and returns a list of events available for registration.
+
+    Response:
+        - GET request returns a 200 OK status along with:
+            - 'success': True
+            - 'message': "Event listing successful"
+            - 'data': Serialized list of events using the EventSerializer
+
+    Note:
+        Events are retrieved from the database using the Event model.
+        The response is formatted using the 'formatted_response' function for consistency.
     """
 
     def get(self, request, *args, **kwargs):
@@ -90,6 +145,23 @@ class EventListAPIView(APIView):
 class EventDetailAPIView(APIView):
     """
     API endpoint for retrieving details of a specific event.
+
+    This endpoint retrieves and returns detailed information about a specific event identified by its id.
+
+    Request:
+        - GET request with the event's id  as a parameter.
+
+    Response:
+        - If the event is found, it returns a 200 OK status along with:
+            - 'success': True
+            - 'message': "Event retrieval successful"
+            - 'data': Serialized details of the specified event using the EventSerializer
+
+        - If the event with the given id does not exist, it returns a 404 Not Found status.
+
+    Note:
+        The specific event is retrieved from the database using the 'get_object' method.
+        The response is formatted using the 'formatted_response' function for consistency.
     """
 
     def get_object(self, pk):
@@ -108,8 +180,27 @@ class EventRegistrationAPIView(APIView):
     """
     API endpoint for handling event registrations.
 
-    Req Body:
-        - event (number): id.
+    This endpoint allows authenticated users to register for events by providing the event ID.
+
+    Request:
+        - POST request with the following parameter in the request body:
+            - event (number): ID of the event to register for.
+
+    Authentication:
+        - Requires a valid JWT token for authentication.
+        - Users must be authenticated to register for events.
+
+    Response:
+        - If the registration is successful, it returns a 201 Created status along with:
+            - 'success': True
+            - 'message': "Event registration successful"
+            - 'data': Serialized details of the registration using the EventRegistrationSerializer
+
+        - If the registration fails due to validation errors or other issues, it returns a 400 Bad Request status along with:
+            - 'success': False
+            - 'message': "Event registration unsuccessful"
+            - 'data': Detailed error information, if applicable.
+
     """
 
     authentication_classes = [JWTAuthentication]
@@ -128,10 +219,28 @@ class EventCreateAPIView(APIView):
     """
     API endpoint for creating events (admin-only).
 
-    Req Body:
-        - name (str): The desired name for the event.
-        - description (str:optional): Description about event.
-        - capacity (number): Total registration capacity.
+    This endpoint allows authenticated admin users to create events by providing necessary information.
+
+    Request:
+        - POST request with the following parameters in the request body:
+            - name (str): The desired name for the event.
+            - description (str, optional): Description about the event.
+            - capacity (number): Total registration capacity for the event.
+
+    Authentication:
+        - Requires a valid JWT token for authentication.
+        - Only admin users are permitted to create events.
+
+    Response:
+        - If the event creation is successful, it returns a 201 Created status along with:
+            - 'success': True
+            - 'message': "Event creation successful"
+            - 'data': Serialized details of the created event using the EventSerializer
+
+        - If the event creation fails due to validation errors or other issues, it returns a 400 Bad Request status along with:
+            - 'success': False
+            - 'message': "Event creation unsuccessful"
+            - 'data': Detailed error information, if applicable.
     """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAdminOrReadOnly]
@@ -148,6 +257,29 @@ class EventCreateAPIView(APIView):
 class CancelEventRegistrationView(APIView):
     """
     API endpoint to cancel an event registration. Only the owner can change the status.
+
+    This endpoint allows authenticated users to cancel their own event registration.
+
+    Request:
+        - PATCH request with the event registration's primary key (pk) as a parameter.
+
+    Authentication:
+        - Requires a valid JWT token for authentication.
+        - Users can only cancel their own event registration.
+
+    Response:
+        - If the cancellation is successful, it returns a 200 OK status along with:
+            - 'success': True
+            - 'message': "Cancel event registration successful"
+            - 'data': Serialized details of the updated event registration using the BasicEventRegistrationSerializer
+
+        - If the cancellation fails due to validation errors, the user not being the owner, or other issues,
+          it returns a 400 Bad Request status along with:
+            - 'success': False
+            - 'message': "Cancel event registration unsuccessful"
+            - 'data': Detailed error information, if applicable.
+
+        - If the event registration with the given primary key does not exist, it returns a 404 Not Found status.
     """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -180,7 +312,27 @@ class CancelEventRegistrationView(APIView):
 
 class EventRegistrationListAPIView(APIView):
     """
-    API endpoint for listing event registration.
+    API endpoint for listing event registrations.
+
+    This endpoint allows authenticated users to retrieve a list of their own event registrations.
+
+    Request:
+        - GET request to retrieve the list of event registrations for the authenticated user.
+
+    Authentication:
+        - Requires a valid JWT token for authentication.
+        - Users can only retrieve their own event registrations.
+
+    Response:
+        - If the retrieval is successful, it returns a 200 OK status along with:
+            - 'success': True
+            - 'message': "Event Registration listing successful"
+            - 'data': Serialized list of event registrations using the BasicEventRegistrationSerializer
+
+        - If the retrieval fails due to authentication issues or other reasons, it returns a 400 Bad Request status along with:
+            - 'success': False
+            - 'message': "Event Registration listing unsuccessful"
+            - 'data': Detailed error information, if applicable.
     """
 
     authentication_classes = [JWTAuthentication]
