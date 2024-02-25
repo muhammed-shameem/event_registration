@@ -49,11 +49,6 @@ class UserRegistrationAPIView(APIView):
             - 'success': False
             - 'message': "User registration unsuccessful"
             - 'data': Detailed error information, if applicable.
-
-    Note:
-        The registration process involves validating the input data using the RegisterSerializer.
-        The user is created if the provided data is valid, and access and refresh tokens are generated.
-        The response is formatted using the 'formatted_response' function for consistency.
     """
 
     def post(self, request, *args, **kwargs):
@@ -100,11 +95,6 @@ class LoginAPIView(APIView):
             - 'success': False
             - 'message': "User login unsuccessful"
             - 'data': Detailed error information, if applicable.
-
-    Note:
-        The login process involves validating the input data using the LoginSerializer.
-        If the provided credentials are valid, it retrieves the user, generates access and refresh tokens,
-        and returns a formatted response using the 'formatted_response' function for consistency.
     """
 
     def post(self, request, *args, **kwargs):
@@ -137,10 +127,6 @@ class EventListAPIView(APIView):
             - 'success': True
             - 'message': "Event listing successful"
             - 'data': Serialized list of events using the EventSerializer
-
-    Note:
-        Events are retrieved from the database using the Event model.
-        The response is formatted using the 'formatted_response' function for consistency.
     """
 
     def get(self, request, *args, **kwargs):
@@ -165,10 +151,6 @@ class EventDetailAPIView(APIView):
             - 'data': Serialized details of the specified event using the EventSerializer
 
         - If the event with the given id does not exist, it returns a 404 Not Found status.
-
-    Note:
-        The specific event is retrieved from the database using the 'get_object' method.
-        The response is formatted using the 'formatted_response' function for consistency.
     """
 
     def get_object(self, pk):
