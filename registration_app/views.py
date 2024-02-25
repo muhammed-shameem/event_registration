@@ -34,11 +34,13 @@ class UserRegistrationAPIView(APIView):
             user = serializer.save()
             if user:
                 refresh = RefreshToken.for_user(user)
+                profile_data = ProfileSerializer(user).data
                 token_data = {
                     'token': {
                         'refresh': str(refresh),
                         'access': str(refresh.access_token)
-                    }
+                    },
+                    'profile': profile_data
                 }
                 return formatted_response(status=status.HTTP_201_CREATED, success=True, message="User registered successfully", data=token_data)
         return formatted_response(status=status.HTTP_400_BAD_REQUEST, success=False, message="User registration unsuccessful", data=serializer.errors)
