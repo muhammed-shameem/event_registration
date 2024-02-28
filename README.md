@@ -40,6 +40,12 @@ pip install -r requirements.txt
 python manage.py makemigrations
 ```
 
+#### Create database migration (App)
+
+```bash
+python manage.py makemigrations registration_app
+```
+
 ### 5. Apply database migrations
 
 ```bash
